@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<title>B-GUIDE LINK | 부산 외국어 관광안내 연결 내비게이터</title>
+<meta content="부산관광공사 공공데이터 기반 외국어 관광안내 연결 내비게이터 PoC" name="description"/>
+<link href="assets/styles.css" rel="stylesheet"/>
+</head>
+<body>
+<header>
+<div class="shell header-inner">
+<div class="brand"><div class="brand-mark">B</div><div>B-GUIDE LINK<small>부산 외국어 관광안내 연결 내비게이터</small></div></div>
+<div aria-label="서비스 메뉴" class="tabs" role="tablist">
+<button aria-selected="true" class="active" id="tabTour" role="tab">관광객 안내</button>
+<button aria-selected="false" id="tabAdmin" role="tab">공사 운영지원</button>
+</div>
+</div>
+</header>
+<main>
+<div class="shell">
+<section class="view active" id="tourView">
+<div class="brief">
+<div class="brief-card"><b>📌 메뉴 개요</b><p>관광지·필요 언어·이용시간을 기준으로 외국어 해설 지원정보를 확인하고, 공백이면 같은 시간대 가까운 대체 해설지를 연결합니다.</p></div>
+<div class="brief-card"><b>📁 사용 데이터</b><p>부산관광공사 문화관광해설사의 집 · 부산버스정보 API 연계 · 한국관광공사 TourAPI 연계 · Visit Busan · 이용자 현장 피드백</p></div>
+</div>
+<div class="workspace">
+<div class="map-wrap">
+<div id="tourMap"></div>
+<div class="map-loading" id="tourLoading"><div class="map-error"><b>부산 지도를 불러오는 중입니다.</b><span>인터넷 연결 시 OpenStreetMap 실제 지도가 표시됩니다.</span></div></div>
+<div class="map-toolbar">
+<span class="map-pill" id="tourMapStatus">中文 · 지원정보 계산 중</span>
+<span class="map-pill" id="tourMapOpen">운영 조건 계산 중</span>
+</div>
+<div class="legend"><span><i class="dot ok"></i>지원</span><span><i class="dot bad"></i>미지원</span><span><i class="dot closed"></i>운영 외</span><span><i class="dot alt"></i>선택 대안</span></div>
+</div>
+<aside class="panel tour-panel">
+<h1>지금 필요한 언어 안내,<br/>가까운 곳부터 연결합니다.</h1>
+<p class="sub">조건을 바꾸면 지도·지원상태·대체지 순위가 함께 바뀝니다. 지도 핀을 눌러 관광지를 바로 선택할 수도 있습니다.</p>
+<div class="field"><label for="place">현재 관광지</label><select id="place"></select></div>
+<div class="field"><label>필요 언어</label><div class="lang-chips" id="tourLangs">
+<button class="chip" data-lang="en" type="button">English</button>
+<button class="chip" data-lang="ja" type="button">日本語</button>
+<button class="chip on" data-lang="zh" type="button">中文</button>
+</div></div>
+<div class="voice-row"><button class="voice-btn" id="voiceAsk" type="button">🎤 음성으로 요청</button><div class="voice-status" id="voiceStatus">예: “감천문화마을에서 중국어 안내 필요해”</div></div>
+<div class="two">
+<div class="field"><label for="date">이용 날짜</label><input id="date" type="date"/></div>
+<div class="field"><label for="time">이용 시간</label><input id="time" type="time" value="14:00"/></div>
+</div>
+<div class="context-note">정기 휴무·운영시간은 공개데이터 기준으로 판정합니다. 설·추석 및 당일 변동은 예약 전 Visit Busan에서 재확인합니다.</div>
+<button class="primary" id="check" type="button">지도에서 안내 경로 확인</button>
+<div aria-live="polite" class="result" id="result"></div>
+<div class="compare" id="compare">
+<div class="compare-head">선택지 비교</div>
+<div class="compare-grid"><div class="compare-col" id="compareFrom"></div><div class="compare-col" id="compareTo"></div></div>
+</div>
+<div class="ai-box" id="aiBox"></div>
+<div class="feature-dock">
+<div aria-label="추가 기능" class="feature-tabs">
+<button class="feature-tab on" data-feature="transit" type="button">대중교통 이동</button>
+<button class="feature-tab" data-feature="rag" type="button">AI 공식해설</button>
+<button class="feature-tab" data-feature="route" type="button">언어지원 동선</button>
+<button class="feature-tab" data-feature="feedback" type="button">현장 피드백</button>
+</div>
+<div class="feature-panel show" id="featureTransit"></div>
+<div class="feature-panel" id="featureRag"></div>
+<div class="feature-panel" id="featureRoute"></div>
+<div class="feature-panel" id="featureFeedback"></div>
+</div>
+<div class="footer-note">* 거리값은 공개 위경도 기반 직선거리입니다. 대중교통 실제 경로·도착정보는 외부 길찾기/부산버스정보 API 연계 단계에서 확인합니다.</div>
+</aside>
+</div>
+</section>
+<section class="view" id="adminView">
+<div class="brief">
+<div class="brief-card"><b>📌 메뉴 개요</b><p>언어·지역·날짜·시간을 바꿔 해설지 운영 커버리지를 확인하고, 운영 중이지만 해당 언어가 비는 지점과 가장 가까운 대안을 함께 탐색합니다.</p></div>
+<div class="brief-card"><b>📁 사용 데이터</b><p>부산관광공사 문화관광해설사의 집 23개소 · Visit Busan 축제·행사 일정 · BPA 크루즈 운영정보 · 이용자 현장 피드백</p></div>
+</div>
+<div class="admin-layout">
+<div class="admin-side">
+<div class="admin-filter">
+<h2>커버리지 조건</h2><p class="sub">필터를 바꾸면 지도와 공백 목록이 즉시 다시 계산됩니다.</p>
+<div class="field"><label>언어</label><div class="lang-chips" id="adminLangs">
+<button class="chip" data-lang="en" type="button">English</button>
+<button class="chip" data-lang="ja" type="button">日本語</button>
+<button class="chip on" data-lang="zh" type="button">中文</button>
+</div></div>
+<div class="field"><label for="district">지역</label><select id="district"><option value="all">부산 전체</option></select></div>
+<div class="two">
+<div class="field"><label for="adminDate">날짜</label><input id="adminDate" type="date"/></div>
+<div class="field"><label for="adminTime">시간</label><input id="adminTime" type="time" value="14:00"/></div>
+</div>
+<div class="status-chips">
+<button class="chip on" id="showAll" type="button">전체 해설지</button>
+<button class="chip warn" id="showGap" type="button">공백만 보기</button>
+</div>
+</div>
+<div class="admin-summary">
+<div class="summary-line"><span>현재 운영 조건 충족</span><strong id="sumOpen">-</strong></div>
+<div class="summary-line"><span>선택 언어 지원</span><strong id="sumSupport">-</strong></div>
+<div class="summary-line"><span>운영 중 안내 공백</span><strong id="sumGap">-</strong></div>
+<div class="summary-line"><span>가장 먼 대체지 직선거리</span><strong id="sumLongest">-</strong></div>
+<div class="summary-line"><span>운영 중 언어 커버리지</span><strong id="sumCoverage">-</strong></div>
+<div class="coverage-bar"><i id="coverageFill" style="width:0%"></i></div>
+</div>
+<div class="signal-panel" id="signalPanel"></div>
+<div class="feedback-audit" id="feedbackAudit"></div>
+<div class="admin-list">
+<div class="admin-list-head"><span>공백 지점 · 가까운 대안</span><span>거리*</span></div>
+<div id="gapList"></div>
+</div>
+<div class="footer-note">공백 지점을 누르면 최근접 대체 해설지를 연결합니다. 축제·크루즈는 ‘운영 확인 신호’로만 사용하며 확률·필요인력 같은 미확인 수치는 생성하지 않습니다.</div>
+</div>
+<div class="map-wrap">
+<div id="adminMap"></div>
+<div class="map-loading" id="adminLoading"><div class="map-error"><b>부산 해설지 지도를 불러오는 중입니다.</b><span>인터넷 연결 시 OpenStreetMap 실제 지도가 표시됩니다.</span></div></div>
+<div class="map-toolbar"><span class="map-pill" id="adminMapStatus">中文 커버리지 계산 중</span></div>
+<div class="legend"><span><i class="dot ok"></i>지원</span><span><i class="dot bad"></i>공백</span><span><i class="dot closed"></i>운영 외</span></div>
+<div class="map-info" id="adminMapInfo"></div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<script src="data/guide-data.js"></script><script src="data/signals-data.js"></script>
+<script src="assets/app-core.js"></script><script src="assets/app-features.js"></script><script src="assets/app-admin-init.js"></script>
+</body>
+</html>
